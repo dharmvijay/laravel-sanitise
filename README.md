@@ -7,7 +7,7 @@ Multi database architecture with class to switch current database connection lar
 Require this package with composer:
 
 ```
-composer require dharmvijay/laravel-multi-database
+composer require dharmvijay/laravel-sanitize
 ```
 
 ## Filter types list
