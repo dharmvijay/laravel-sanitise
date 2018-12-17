@@ -4,6 +4,8 @@
     "type": "helper",
     "license": "MIT",
     "version": "v0.1.1",
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "keywords": [
         "laravel",
         "laravel-sanitize",
