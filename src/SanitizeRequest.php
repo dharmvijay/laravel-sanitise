@@ -5,8 +5,6 @@ namespace Dharmvijay\laravelSanitiseAndValidationTransformer;
 use Illuminate\Http\Request;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
-use Dharmvijay\laravelSanitiseAndValidationTransformer\APIResponse;
-use Exception;
 
 trait SanitizeRequest
 {
@@ -22,114 +20,73 @@ trait SanitizeRequest
     public function sanitize(array $inputs, $filters = [])
     {
 
+        $request = new Request();
+
         foreach ($inputs as $i => $item) {
 
             //Sanitize trim
-            if(!is_array($item) && !empty($filters['trim']) && in_array($i,$filters['trim'])){
-                $inputs[$i] = trim($inputs[$i]);
-            }
+            $inputs = $this->trim($inputs, $filters, $item, $i);
+
             //Sanitize integers
-            if(!empty($filters['integers']) && in_array($i,$filters['integers'])){
-                $inputs[$i] = filter_var($inputs[$i], FILTER_SANITIZE_NUMBER_INT);
-            }
+            $inputs = $this->integers($inputs, $filters, $i);
 
             //Sanitize float
-            if(!empty($filters['float']) && in_array($i,$filters['float'])){
-                $inputs[$i] = filter_var($inputs[$i], FILTER_SANITIZE_NUMBER_FLOAT);
-            }
+            $inputs = $this->float($inputs, $filters, $i);
 
             //Sanitize strings
-            if(!empty($filters['strings']) && in_array($i,$filters['strings'])){
-                $inputs[$i] = filter_var($inputs[$i], FILTER_SANITIZE_STRING);
-            }
-
-            //Sanitize strings_only
-            //This will remove the tab and the line break
-            //This will remove the é.
-            if(!empty($filters['strings_only']) && in_array($i,$filters['strings_only'])){
-                $inputs[$i] = filter_var($inputs[$i], FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH | FILTER_FLAG_STRIP_BACKTICK);
-            }
+            $inputs = $this->strings($inputs, $filters, $i);
 
             //Sanitize emails
-            if(!empty($filters['emails']) && in_array($i,$filters['emails'])){
-                $inputs[$i] = filter_var($inputs[$i], FILTER_SANITIZE_EMAIL);
-            }
+            $inputs = $this->emails($inputs, $filters, $i);
 
             //Sanitize url
-            if(!empty($filters['url']) && in_array($i,$filters['url'])){
-                $inputs[$i] = filter_var($inputs[$i], FILTER_SANITIZE_URL);
-            }
+            $inputs = $this->url($inputs, $filters, $i);
 
             //Sanitize encoded
-            if(!empty($filters['encoded']) && in_array($i,$filters['encoded'])){
-                $inputs[$i] = filter_var($inputs[$i], FILTER_SANITIZE_ENCODED);
-            }
+            $inputs = $this->encoded($inputs, $filters, $i);
 
             //Sanitize Alnum
             //Strips non-alphanumeric characters from the value.
-            if(!empty($filters['alnum']) && in_array($i,$filters['alnum'])){
-                $inputs[$i] = preg_replace('/[^\p{L}\p{Nd}]/u', '',$inputs[$i]);
-            }
+            $inputs = $this->alnum($inputs, $filters, $i);
 
             //Sanitize Word
             //Strips non-alphanumeric characters from the value.
-            if(!empty($filters['word']) && in_array($i,$filters['word'])){
-                $inputs[$i] = preg_replace('/[^\p{L}\p{Nd}_]/u', '',$inputs[$i]);
-            }
+            $inputs = $this->word($inputs, $filters, $i);
 
             //Sanitize Alpha
             //Strips non-alphabetic characters from the value.
-            if(!empty($filters['alpha']) && in_array($i,$filters['alpha'])){
-                $inputs[$i] = preg_replace('/[^\p{L}]/u', '',$inputs[$i]);
-            }
+            $inputs = $this->alpha($inputs, $filters, $i);
 
             //Sanitize booleans
-            if(!empty($filters['booleans']) && in_array($i,$filters['booleans'])){
-                $inputs[$i] = filter_var($inputs[$i], FILTER_VALIDATE_BOOLEAN);
-            }
+            $inputs = $this->booleans($inputs, $filters, $i);
 
             //Sanitize date time
-            if(!empty($filters['datetime']) && in_array($i,$filters['datetime'])){
-                $format = 'Y-m-d H:i:s';
-                $value = $inputs[$i];
-                $datetime = $this->newDateTime($value);
-                if ($datetime) {
-                    $inputs[$i] = $datetime->format($format);
-                }
-            }
+            $inputs = $this->datetime($inputs, $filters, $i);
 
             //Sanitize uppercase
-            if(!empty($filters['uppercase']) && in_array($i,$filters['uppercase'])){
-                $inputs[$i] = $this->strtoupper($inputs[$i]);
-            }
+            $inputs = $this->uppercase($inputs, $filters, $i);
+
+            //Sanitize lowercase
+            $inputs = $this->lowercase($inputs, $filters, $i);
 
             //Sanitize ucfirst
             //Sanitizes a string to begin with uppercase.
-            if(!empty($filters['ucfirst']) && in_array($i,$filters['ucfirst'])){
-                $inputs[$i] = $this->ucfirst($inputs[$i]);
-            }
+            $inputs = $this->stringUcFirst($inputs, $filters, $i);
+
+            //Sanitize lcfirst
+            //Sanitizes a string to begin with lowercase.
+            $inputs = $this->stringLcFirst($inputs, $filters, $i);
 
             //Sanitize html
-            if(!empty($filters['html']) && in_array($i,$filters['html'])){
-
-                $string = strip_tags($inputs[$i], '<a><strong><em><hr><br><p><u><ul><ol><li><dl><dt><dd><table><thead><tr><th><tbody><td><tfoot>');
-                $string = addslashes($string);
-                $inputs[$i] = filter_var($string, FILTER_SANITIZE_STRING);
-            }
+            $inputs = $this->html($inputs, $filters, $i);
 
             //Sanitize slug
-            if(!empty($filters['slug']) && in_array($i,$filters['slug'])){
-                $string = str_slug($inputs[$i]);
-                $inputs[$i] = filter_var($string, FILTER_SANITIZE_URL);
-            }
+            $inputs = $this->slug($inputs, $filters, $i);
 
-
-
-
+            $request->replace($inputs);
         }
 
-        $request = new Request();
-        $request->replace($inputs);
+        $inputs = $request->all();
         return $inputs;
     }
 
@@ -307,7 +264,7 @@ trait SanitizeRequest
      *
      * @return string
      *
-     * @throws Exception
+     * @throws HttpResponseException
      *
      */
     protected function substrIconv($str,$start,$length)
@@ -318,6 +275,7 @@ trait SanitizeRequest
         if ($substr !== false) {
             return $substr;
         }
+
         throw new \HttpRequestException('exception on malformed UTF-8');
 
     }
@@ -330,7 +288,7 @@ trait SanitizeRequest
      *
      * @return int
      *
-     * @throws Exception
+     * @throws HttpResponseException
      *
      */
     protected function strlenIconv($str)
@@ -447,5 +405,268 @@ trait SanitizeRequest
     {
         $regex = '/^[a-f0-9]{32}$/i';
         return (bool) preg_match($regex, $value);
+    }
+
+    /**
+     * @param array $inputs
+     * @param $filters
+     * @param $item
+     * @param $i
+     * @return array
+     */
+    protected function trim(array $inputs, $filters, $item, $i)
+    {
+        if (!is_array($item) && !empty($filters['trim']) && in_array($i, $filters['trim'])) {
+            $inputs[$i] = trim($inputs[$i]);
+        }
+        return $inputs;
+    }
+
+    /**
+     * @param array $inputs
+     * @param $filters
+     * @param $i
+     * @return array
+     */
+    protected function integers(array $inputs, $filters, $i)
+    {
+        if (!empty($filters['integers']) && in_array($i, $filters['integers'])) {
+            $inputs[$i] = filter_var($inputs[$i], FILTER_SANITIZE_NUMBER_INT);
+        }
+        return $inputs;
+    }
+
+    /**
+     * @param array $inputs
+     * @param $filters
+     * @param $i
+     * @return array
+     */
+    protected function float(array $inputs, $filters, $i)
+    {
+        if (!empty($filters['float']) && in_array($i, $filters['float'])) {
+            $inputs[$i] = filter_var($inputs[$i], FILTER_SANITIZE_NUMBER_FLOAT);
+        }
+        return array($filters, $inputs);
+    }
+
+    /**
+     * @param array $inputs
+     * @param $filters
+     * @param $i
+     * @return array
+     */
+    protected function strings(array $inputs, $filters, $i)
+    {
+        if (!empty($filters['strings']) && in_array($i, $filters['strings'])) {
+            $inputs[$i] = filter_var($inputs[$i], FILTER_SANITIZE_STRING);
+        }
+        return $inputs;
+    }
+
+    /**
+     * @param array $inputs
+     * @param $filters
+     * @param $i
+     * @return array
+     */
+    protected function emails(array $inputs, $filters, $i)
+    {
+        if (!empty($filters['emails']) && in_array($i, $filters['emails'])) {
+            $inputs[$i] = filter_var($inputs[$i], FILTER_SANITIZE_EMAIL);
+        }
+        return $inputs;
+    }
+
+    /**
+     * @param array $inputs
+     * @param $filters
+     * @param $i
+     * @return array
+     */
+    protected function url(array $inputs, $filters, $i)
+    {
+        if (!empty($filters['url']) && in_array($i, $filters['url'])) {
+            $inputs[$i] = filter_var($inputs[$i], FILTER_SANITIZE_URL);
+        }
+        return $inputs;
+    }
+
+    /**
+     * @param array $inputs
+     * @param $filters
+     * @param $i
+     * @return array
+     */
+    protected function encoded(array $inputs, $filters, $i)
+    {
+        if (!empty($filters['encoded']) && in_array($i, $filters['encoded'])) {
+            $inputs[$i] = filter_var($inputs[$i], FILTER_SANITIZE_ENCODED);
+        }
+        return $inputs;
+    }
+
+    /**
+     * @param array $inputs
+     * @param $filters
+     * @param $i
+     * @return array
+     */
+    protected function alnum(array $inputs, $filters, $i)
+    {
+        if (!empty($filters['alnum']) && in_array($i, $filters['alnum'])) {
+            $inputs[$i] = preg_replace('/[^\p{L}\p{Nd}]/u', '', $inputs[$i]);
+        }
+        return $inputs;
+    }
+
+    /**
+     * @param array $inputs
+     * @param $filters
+     * @param $i
+     * @return array
+     */
+    protected function word(array $inputs, $filters, $i)
+    {
+        if (!empty($filters['word']) && in_array($i, $filters['word'])) {
+            $inputs[$i] = preg_replace('/[^\p{L}\p{Nd}_]/u', '', $inputs[$i]);
+        }
+        return $inputs;
+    }
+
+    /**
+     * @param array $inputs
+     * @param $filters
+     * @param $i
+     * @return array
+     */
+    protected function alpha(array $inputs, $filters, $i)
+    {
+        if (!empty($filters['alpha']) && in_array($i, $filters['alpha'])) {
+            $inputs[$i] = preg_replace('/[^\p{L}]/u', '', $inputs[$i]);
+        }
+        return $inputs;
+    }
+
+    /**
+     * @param array $inputs
+     * @param $filters
+     * @param $i
+     * @return array
+     */
+    protected function booleans(array $inputs, $filters, $i)
+    {
+        if (!empty($filters['booleans']) && in_array($i, $filters['booleans'])) {
+            $inputs[$i] = filter_var($inputs[$i], FILTER_VALIDATE_BOOLEAN);
+        }
+        return $inputs;
+    }
+
+    /**
+     * @param array $inputs
+     * @param $filters
+     * @param $i
+     * @return array
+     */
+    protected function datetime(array $inputs, $filters, $i)
+    {
+        if (!empty($filters['datetime']) && in_array($i, $filters['datetime'])) {
+            $format = 'Y-m-d H:i:s';
+            $value = $inputs[$i];
+            $datetime = $this->newDateTime($value);
+            if ($datetime) {
+                $inputs[$i] = $datetime->format($format);
+            }
+        }
+        return $inputs;
+    }
+
+    /**
+     * @param array $inputs
+     * @param $filters
+     * @param $i
+     * @return array
+     */
+    protected function uppercase(array $inputs, $filters, $i)
+    {
+        if (!empty($filters['uppercase']) && in_array($i, $filters['uppercase'])) {
+            $inputs[$i] = $this->strtoupper($inputs[$i]);
+        }
+        return $inputs;
+    }
+
+    /**
+     * @param array $inputs
+     * @param $filters
+     * @param $i
+     * @return array
+     */
+    protected function lowercase(array $inputs, $filters, $i)
+    {
+        if (!empty($filters['lowercase']) && in_array($i, $filters['lowercase'])) {
+            $inputs[$i] = $this->strtolower($inputs[$i]);
+        }
+        return $inputs;
+    }
+
+    /**
+     * @param array $inputs
+     * @param $filters
+     * @param $i
+     * @return array
+     */
+    protected function stringUcFirst(array $inputs, $filters, $i)
+    {
+        if (!empty($filters['ucfirst']) && in_array($i, $filters['ucfirst'])) {
+            $inputs[$i] = $this->ucfirst($inputs[$i]);
+        }
+        return $inputs;
+    }
+
+    /**
+     * @param array $inputs
+     * @param $filters
+     * @param $i
+     * @return array
+     */
+    protected function stringLcFirst(array $inputs, $filters, $i)
+    {
+        if (!empty($filters['lcfirst']) && in_array($i, $filters['lcfirst'])) {
+            $inputs[$i] = $this->lcfirst($inputs[$i]);
+        }
+        return $inputs;
+    }
+
+    /**
+     * @param array $inputs
+     * @param $filters
+     * @param $i
+     * @return array
+     */
+    protected function html(array $inputs, $filters, $i)
+    {
+        if (!empty($filters['html']) && in_array($i, $filters['html'])) {
+
+            $string = strip_tags($inputs[$i],
+                '<a><strong><em><hr><br><p><u><ul><ol><li><dl><dt><dd><table><thead><tr><th><tbody><td><tfoot>');
+            $string = addslashes($string);
+            $inputs[$i] = filter_var($string, FILTER_SANITIZE_STRING);
+        }
+        return $inputs;
+    }
+
+    /**
+     * @param array $inputs
+     * @param $filters
+     * @param $i
+     * @return array
+     */
+    protected function slug(array $inputs, $filters, $i)
+    {
+        if (!empty($filters['slug']) && in_array($i, $filters['slug'])) {
+            $string = str_slug($inputs[$i]);
+            $inputs[$i] = filter_var($string, FILTER_SANITIZE_URL);
+        }
+        return $inputs;
     }
 }
