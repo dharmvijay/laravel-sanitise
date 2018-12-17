@@ -3,6 +3,7 @@
     "description": "laravel framework request sanitize.",
     "type": "helper",
     "license": "MIT",
+    "version": "v0.1.1",
     "keywords": [
         "laravel",
         "laravel-sanitize",
