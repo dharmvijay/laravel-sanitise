@@ -1,6 +1,6 @@
 <?php
 
-namespace Dharmvijay\laravelSanitiseAndValidationTransformer;
+namespace Dharmvijay\LaravelSanitize;
 
 use Illuminate\Http\Request;
 use Illuminate\Contracts\Validation\Validator;
@@ -45,15 +45,15 @@ trait SanitizeRequest
             //Sanitize encoded
             $inputs = $this->encoded($inputs, $filters, $i);
 
-            //Sanitize Alnum
+            //Sanitize alnum
             //Strips non-alphanumeric characters from the value.
             $inputs = $this->alnum($inputs, $filters, $i);
 
-            //Sanitize Word
+            //Sanitize word
             //Strips non-alphanumeric characters from the value.
             $inputs = $this->word($inputs, $filters, $i);
 
-            //Sanitize Alpha
+            //Sanitize alpha
             //Strips non-alphabetic characters from the value.
             $inputs = $this->alpha($inputs, $filters, $i);
 
@@ -82,6 +82,9 @@ trait SanitizeRequest
 
             //Sanitize slug
             $inputs = $this->slug($inputs, $filters, $i);
+
+            //Sanitize special_chars
+            $inputs = $this->specialChars($inputs, $filters, $i);
 
             $request->replace($inputs);
         }
@@ -447,7 +450,7 @@ trait SanitizeRequest
         if (!empty($filters['float']) && in_array($i, $filters['float'])) {
             $inputs[$i] = filter_var($inputs[$i], FILTER_SANITIZE_NUMBER_FLOAT);
         }
-        return array($filters, $inputs);
+        return $inputs;
     }
 
     /**
@@ -666,6 +669,20 @@ trait SanitizeRequest
         if (!empty($filters['slug']) && in_array($i, $filters['slug'])) {
             $string = str_slug($inputs[$i]);
             $inputs[$i] = filter_var($string, FILTER_SANITIZE_URL);
+        }
+        return $inputs;
+    }
+
+    /**
+     * @param array $inputs
+     * @param $filters
+     * @param $i
+     * @return array
+     */
+    protected function specialChars(array $inputs, $filters, $i)
+    {
+        if (!empty($filters['special_chars']) && in_array($i, $filters['special_chars'])) {
+            $inputs[$i] = filter_var($inputs[$i], FILTER_SANITIZE_SPECIAL_CHARS);
         }
         return $inputs;
     }
