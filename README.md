@@ -77,8 +77,7 @@ composer require dharmvijay/laravel-multi-database
 
 ```
 
-*That's it. Thanks for considering, Welcome contributions, Contact me - dbp264@gmail.com*
-
+*Example Full File*
 ```
 <?php
 
@@ -115,3 +114,5 @@ class CreateUsersRequest extends FormRequest
 }
 
 ```
+
+*That's it. Thanks for considering, Welcome contributions, Contact me - dbp264@gmail.com*
