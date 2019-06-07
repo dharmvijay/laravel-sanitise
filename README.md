@@ -54,10 +54,12 @@ composer require "dharmvijay/laravel-sanitize @dev"
 ## Usage
 
 *1.Use SanitizedRequest trait in your any request file*
-`use SanitizedRequest;`
+```PHP
+ use SanitizedRequest;
+```
 
 *2.Create a protected variable and name it $filters. Here declare field names in filter type keys.*
-```
+```PHP
     protected $filters = [
          'strings' => ['field_name1', 'field_name2', ...],
          'integers' => ['field_name1', ...],
@@ -68,7 +70,7 @@ composer require "dharmvijay/laravel-sanitize @dev"
  ```
 
 *3. Use sanitize method in rules method same as below.*
-```
+```PHP
     public function rules()
     {
         $this->sanitize(parent::all(), $this->filters);
@@ -78,7 +80,7 @@ composer require "dharmvijay/laravel-sanitize @dev"
 ```
 
 *Example Full File*
-```
+```PHP
 <?php
 
 namespace App\Http\Requests\API\v4;
